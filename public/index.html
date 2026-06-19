@@ -40,7 +40,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="version-tag">Version 1.1.0 (Dynamic)</div>
+        <div class="version-tag">Version 1.1.1 (Snippets Update)</div>
       </div>
     </aside>
 
@@ -197,7 +197,7 @@
                 <pre><code class="language-json">{
   "models": [
     {
-      "title": "Local DeepSeek",
+      "title": "Local DeepSeek Free",
       "provider": "openai",
       "model": "opencode/deepseek-v4-flash-free",
       "apiBase": "http://localhost:4000/v1",
@@ -222,7 +222,7 @@
                   <li>Click on **Override OpenAI Base URL**.</li>
                   <li>Set the URL to: <code>http://localhost:4000/v1</code>.</li>
                   <li>Enter the Local API key: <code>aetherix-sk-master-9f3a7b2e1d</code>.</li>
-                  <li>Add your desired model IDs, such as <code>opencode/deepseek-v4-flash-free</code> and <code>opencode/big-pickle</code>.</li>
+                  <li>Add your desired model IDs: <code>opencode/deepseek-v4-flash-free</code> and <code>opencode/big-pickle</code>.</li>
                 </ol>
               </div>
 
@@ -236,10 +236,12 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="opencode/big-pickle",
+    model="opencode/deepseek-v4-flash-free",
     messages=[
         {"role": "user", "content": "Write a python quicksort script."}
-    ]
+    ],
+    temperature=0.7,
+    max_tokens=2048
 )
 
 print(response.choices[0].message.content)</code></pre>
@@ -255,8 +257,10 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "opencode/big-pickle",
-  messages: [{ role: "user", content: "Tell me a joke." }]
+  model: "opencode/deepseek-v4-flash-free",
+  messages: [{ role: "user", content: "Tell me a joke." }],
+  temperature: 0.7,
+  max_tokens: 2048
 });
 
 console.log(response.choices[0].message.content);</code></pre>
