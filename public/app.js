@@ -39,6 +39,82 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // --- Dynamic Model Fetching & Listing ---
+  const modelSelect = document.getElementById("play-model-select");
+  const modelsGrid = document.getElementById("dashboard-models-grid");
+  let modelsList = [];
+
+  async function loadModels() {
+    try {
+      const res = await fetch("/v1/models");
+      if (!res.ok) throw new Error("Could not fetch models");
+      const result = await res.json();
+      modelsList = result.data || [];
+      
+      // 1. Populate Playground Select Dropdown
+      modelSelect.innerHTML = "";
+      if (modelsList.length === 0) {
+        modelSelect.innerHTML = "<option>No active models found</option>";
+        modelsGrid.innerHTML = `<p style="color: var(--accent-red);">No active models registered in OpenCode daemon.</p>`;
+        return;
+      }
+
+      modelsList.forEach(model => {
+        // Clean display name (e.g. opencode/mimo-v2.5-free -> Mimo V2.5 Free)
+        let displayName = model.id.replace("opencode/", "");
+        displayName = displayName.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+        
+        const option = document.createElement("option");
+        option.value = model.id;
+        option.textContent = displayName;
+        modelSelect.appendChild(option);
+      });
+
+      // 2. Populate Dashboard Grid Cards
+      modelsGrid.innerHTML = "";
+      modelsList.forEach(model => {
+        let displayName = model.id.replace("opencode/", "");
+        displayName = displayName.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+        
+        // Detect vision capabilities
+        const isVision = model.id.includes("vision") || model.id.includes("nano") || model.id.includes("gpt");
+        const badgeClass = isVision ? "vision" : "text";
+        const badgeLabel = isVision ? "Vision" : "Text";
+        const description = isVision 
+          ? "Capable multimodal engine parsing images, layout matrices, and text." 
+          : "General reasoning and language processing execution engine.";
+
+        const card = document.createElement("div");
+        card.className = "model-item-card";
+        card.innerHTML = `
+          <div class="model-header">
+            <span class="model-badge ${badgeClass}">${badgeLabel}</span>
+            <h4>${displayName}</h4>
+          </div>
+          <p class="model-desc">${description}</p>
+          <code class="model-id-code">${model.id}</code>
+        `;
+        modelsGrid.appendChild(card);
+      });
+
+    } catch (err) {
+      console.error(err);
+      modelSelect.innerHTML = "<option>Error loading models</option>";
+      modelsGrid.innerHTML = `<p style="color: var(--accent-red);">Failed to load active models: ${err.message}</p>`;
+    }
+  }
+
+  // Initial load of models
+  loadModels();
+
+  // --- Temperature Display Update ---
+  const tempSlider = document.getElementById("play-temperature");
+  const tempValDisplay = document.getElementById("temp-val-display");
+  
+  tempSlider.addEventListener("input", () => {
+    tempValDisplay.textContent = Number(tempSlider.value).toFixed(1);
+  });
+
   // --- System Status Polling ---
   const daemonPulse = document.getElementById("daemon-pulse");
   const daemonStatusTxt = document.getElementById("daemon-status-txt");
@@ -67,6 +143,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.daemonOnline) {
         daemonPulse.className = "pulse-dot green";
         daemonStatusTxt.textContent = `Online (Port ${data.daemonPort})`;
+        
+        // If models list was empty (e.g. daemon was starting up), reload it
+        if (modelsList.length === 0) {
+          loadModels();
+        }
       } else {
         daemonPulse.className = "pulse-dot red";
         daemonStatusTxt.textContent = "Offline (Check Console)";
@@ -90,8 +171,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatInput = document.getElementById("chat-input-textarea");
   const sendBtn = document.getElementById("send-chat-btn");
   const clearBtn = document.getElementById("clear-chat-btn");
-  const modelSelect = document.getElementById("play-model-select");
   const systemPromptInput = document.getElementById("play-system-prompt");
+  const maxTokensInput = document.getElementById("play-max-tokens");
 
   let conversationHistory = [];
 
@@ -185,12 +266,16 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: JSON.stringify({
           model: modelSelect.value,
-          messages: messagesPayload
+          messages: messagesPayload,
+          temperature: parseFloat(tempSlider.value),
+          max_tokens: parseInt(maxTokensInput.value) || 2048
         })
       });
 
       // Remove loading indicator bubble
-      chatMessagesContainer.removeChild(loadingDiv);
+      if (chatMessagesContainer.contains(loadingDiv)) {
+        chatMessagesContainer.removeChild(loadingDiv);
+      }
 
       if (!response.ok) {
         const errorData = await response.json();

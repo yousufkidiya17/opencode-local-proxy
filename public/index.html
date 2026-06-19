@@ -40,7 +40,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="version-tag">Version 1.0.0 (Local)</div>
+        <div class="version-tag">Version 1.1.0 (Dynamic)</div>
       </div>
     </aside>
 
@@ -108,62 +108,11 @@
           <!-- Card 3: Model List -->
           <div class="card glass full-width">
             <h3>Available Proxy Models</h3>
-            <p class="subtitle">These free models are proxied automatically from your local OpenCode environment:</p>
+            <p class="subtitle">These free models are dynamically loaded from your local OpenCode daemon session:</p>
             
-            <div class="model-cards-grid">
-              <div class="model-item-card">
-                <div class="model-header">
-                  <span class="model-badge vision">Vision</span>
-                  <h4>GPT-5 Nano</h4>
-                </div>
-                <p class="model-desc">Capable vision and text model with large context size.</p>
-                <code class="model-id-code">opencode/gpt-5-nano</code>
-              </div>
-
-              <div class="model-item-card">
-                <div class="model-header">
-                  <span class="model-badge text">Text</span>
-                  <h4>Big Pickle</h4>
-                </div>
-                <p class="model-desc">Highly capable reasoning and problem solving engine.</p>
-                <code class="model-id-code">opencode/big-pickle</code>
-              </div>
-
-              <div class="model-item-card">
-                <div class="model-header">
-                  <span class="model-badge text">Text</span>
-                  <h4>MiniMax M2.5 Free</h4>
-                </div>
-                <p class="model-desc">High-speed general purpose assistant model.</p>
-                <code class="model-id-code">opencode/minimax-m2.5-free</code>
-              </div>
-
-              <div class="model-item-card">
-                <div class="model-header">
-                  <span class="model-badge text">Text</span>
-                  <h4>Nemotron 3 Super Free</h4>
-                </div>
-                <p class="model-desc">Optimized reasoning engine powered by NVIDIA.</p>
-                <code class="model-id-code">opencode/nemotron-3-super-free</code>
-              </div>
-
-              <div class="model-item-card">
-                <div class="model-header">
-                  <span class="model-badge text">Text</span>
-                  <h4>DeepSeek V4 Flash Free</h4>
-                </div>
-                <p class="model-desc">Ultra-fast response generation for code and text.</p>
-                <code class="model-id-code">opencode/deepseek-v4-flash-free</code>
-              </div>
-
-              <div class="model-item-card">
-                <div class="model-header">
-                  <span class="model-badge text">Text</span>
-                  <h4>Qwen 3.6 Plus Free</h4>
-                </div>
-                <p class="model-desc">State-of-the-art multilingual and creative text helper.</p>
-                <code class="model-id-code">opencode/qwen3.6-plus-free</code>
-              </div>
+            <div class="model-cards-grid" id="dashboard-models-grid">
+              <!-- Dynamically populated at runtime -->
+              <p style="color: var(--text-muted);">Fetching active models from OpenCode CLI...</p>
             </div>
           </div>
         </div>
@@ -175,24 +124,37 @@
           <!-- Left side controls -->
           <div class="playground-sidebar card glass">
             <h3>Playground Controls</h3>
+            
             <div class="form-group">
               <label for="play-model-select">Active Model</label>
               <select id="play-model-select" class="form-select">
-                <option value="opencode/gpt-5-nano">GPT-5 Nano (Vision)</option>
-                <option value="opencode/big-pickle">Big Pickle</option>
-                <option value="opencode/minimax-m2.5-free">MiniMax M2.5 Free</option>
-                <option value="opencode/nemotron-3-super-free">Nemotron 3 Super Free</option>
-                <option value="opencode/deepseek-v4-flash-free">DeepSeek V4 Flash Free</option>
-                <option value="opencode/qwen3.6-plus-free">Qwen 3.6 Plus Free</option>
+                <option>Loading models...</option>
               </select>
             </div>
             
+            <hr style="border: 0; border-top: 1px solid var(--card-border); margin: 5px 0;" />
+            
+            <h3>Generation Settings</h3>
+            
             <div class="form-group">
               <label for="play-system-prompt">System Prompt</label>
-              <textarea id="play-system-prompt" class="form-input" rows="4">You are a helpful local assistant powered by Aetherix AI and OpenCode.</textarea>
+              <textarea id="play-system-prompt" class="form-input" rows="3">You are a helpful local assistant powered by Aetherix AI and OpenCode.</textarea>
+            </div>
+            
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label for="play-temperature">Temperature</label>
+                <span id="temp-val-display" style="font-size: 0.85rem; font-family: var(--font-mono); color: var(--accent-purple);">0.7</span>
+              </div>
+              <input type="range" id="play-temperature" min="0.0" max="1.0" step="0.1" value="0.7" style="width: 100%; accent-color: var(--accent-purple);" />
             </div>
 
-            <button class="btn btn-secondary" id="clear-chat-btn">Clear Chat History</button>
+            <div class="form-group">
+              <label for="play-max-tokens">Max Output Tokens</label>
+              <input type="number" id="play-max-tokens" class="form-input" min="64" max="8192" step="64" value="2048" />
+            </div>
+
+            <button class="btn btn-secondary" id="clear-chat-btn" style="margin-top: 10px;">Clear Chat History</button>
           </div>
 
           <!-- Chat Screen -->
@@ -200,7 +162,7 @@
             <div class="chat-messages" id="chat-messages-container">
               <div class="message system">
                 <div class="message-content">
-                  Welcome to Aetherix Playground! Select a model on the left, type a prompt below, and chat in real-time.
+                  Welcome to Aetherix Playground! Select a model on the left, adjust generation parameters, and chat in real-time.
                 </div>
               </div>
             </div>
@@ -235,14 +197,14 @@
                 <pre><code class="language-json">{
   "models": [
     {
-      "title": "Aetherix GPT-5 Nano",
+      "title": "Local DeepSeek",
       "provider": "openai",
-      "model": "opencode/gpt-5-nano",
+      "model": "opencode/deepseek-v4-flash-free",
       "apiBase": "http://localhost:4000/v1",
       "apiKey": "aetherix-sk-master-9f3a7b2e1d"
     },
     {
-      "title": "Aetherix Big Pickle",
+      "title": "Local Big Pickle",
       "provider": "openai",
       "model": "opencode/big-pickle",
       "apiBase": "http://localhost:4000/v1",
@@ -260,7 +222,7 @@
                   <li>Click on **Override OpenAI Base URL**.</li>
                   <li>Set the URL to: <code>http://localhost:4000/v1</code>.</li>
                   <li>Enter the Local API key: <code>aetherix-sk-master-9f3a7b2e1d</code>.</li>
-                  <li>Add your desired model IDs, such as <code>opencode/gpt-5-nano</code> and <code>opencode/big-pickle</code>.</li>
+                  <li>Add your desired model IDs, such as <code>opencode/deepseek-v4-flash-free</code> and <code>opencode/big-pickle</code>.</li>
                 </ol>
               </div>
 
@@ -293,7 +255,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "opencode/gpt-5-nano",
+  model: "opencode/big-pickle",
   messages: [{ role: "user", content: "Tell me a joke." }]
 });
 

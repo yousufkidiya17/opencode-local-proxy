@@ -1,15 +1,17 @@
 import express from "express";
 import cors from "cors";
 import { createOpencodeClient } from "@opencode-ai/sdk";
-import { spawn } from "child_process";
+import { spawn, exec } from "child_process";
 import fs from "fs";
 import path from "path";
 import http from "http";
 import dotenv from "dotenv";
+import { promisify } from "util";
 import { fileURLToPath } from "url";
 
 dotenv.config();
 
+const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -29,14 +31,68 @@ const client = createOpencodeClient({ url: BASE });
 const API_KEY = process.env.API_KEY || "aetherix-sk-master-9f3a7b2e1d";
 const STRICT_AUTH = process.env.STRICT_AUTH === "true"; // If true, requires auth even on localhost
 
-const MODELS = [
-  { id: "opencode/gpt-5-nano", name: "GPT-5 Nano (Vision)", vision: true },
-  { id: "opencode/big-pickle", name: "Big Pickle", vision: false },
-  { id: "opencode/minimax-m2.5-free", name: "MiniMax M2.5 Free", vision: false },
-  { id: "opencode/nemotron-3-super-free", name: "Nemotron 3 Super Free", vision: false },
-  { id: "opencode/deepseek-v4-flash-free", name: "DeepSeek V4 Flash Free", vision: false },
-  { id: "opencode/qwen3.6-plus-free", name: "Qwen 3.6 Plus Free", vision: false },
-];
+// Dynamic Models Cache
+let cachedModels = [];
+let lastCacheTime = 0;
+const CACHE_TTL = 30000; // 30 seconds cache
+
+// Fetch models dynamically from OpenCode CLI
+async function getAvailableModels() {
+  const now = Date.now();
+  if (cachedModels.length > 0 && now - lastCacheTime < CACHE_TTL) {
+    return cachedModels;
+  }
+
+  try {
+    const { stdout } = await execAsync("opencode models");
+    const lines = stdout.split("\n");
+    const parsedModels = [];
+
+    for (let line of lines) {
+      line = line.trim();
+      if (!line || line.startsWith("Available models:") || line.includes("default")) {
+        // Skip header lines or help texts
+        continue;
+      }
+
+      // Handle brackets or comments like "opencode/big-pickle (default)"
+      const cleanId = line.split(" ")[0].trim();
+      if (cleanId.startsWith("opencode/")) {
+        const namePart = cleanId.replace("opencode/", "");
+        // Clean name (e.g. deepseek-v4-flash-free -> Deepseek V4 Flash Free)
+        const cleanName = namePart
+          .split("-")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+
+        parsedModels.push({
+          id: cleanId,
+          name: cleanName,
+          vision: cleanId.includes("vision") || cleanId.includes("nano") || cleanId.includes("gpt"),
+        });
+      }
+    }
+
+    if (parsedModels.length > 0) {
+      cachedModels = parsedModels;
+      lastCacheTime = now;
+    }
+  } catch (err) {
+    console.error("[Proxy] Error fetching models from CLI:", err.message);
+    // Fallback list of models if CLI query fails
+    if (cachedModels.length === 0) {
+      return [
+        { id: "opencode/big-pickle", name: "Big Pickle (Fallback)", vision: false },
+        { id: "opencode/deepseek-v4-flash-free", name: "DeepSeek V4 Flash Free (Fallback)", vision: false },
+        { id: "opencode/mimo-v2.5-free", name: "Mimo V2.5 Free (Fallback)", vision: false },
+        { id: "opencode/nemotron-3-ultra-free", name: "Nemotron 3 Ultra Free (Fallback)", vision: false },
+        { id: "opencode/north-mini-code-free", name: "North Mini Code Free (Fallback)", vision: false },
+      ];
+    }
+  }
+
+  return cachedModels;
+}
 
 let opencodeProcess = null;
 let isDaemonOnline = false;
@@ -62,7 +118,7 @@ async function ensureDaemonOnline() {
   if (online) {
     console.log(`[Proxy] OpenCode serve daemon already running at ${BASE}`);
     return;
-    }
+  }
 
   console.log(`[Proxy] OpenCode serve daemon not detected at ${BASE}. Spawning daemon...`);
   
@@ -104,7 +160,7 @@ async function ensureDaemonOnline() {
     }
   }
 
-  console.warn(`[Proxy] Warning: OpenCode daemon failed to respond within 9 seconds. Please ensure 'opencode' is installed and run 'opencode login' first.`);
+  console.warn(`[Proxy] Warning: OpenCode daemon failed to respond within 9 seconds. Please ensure 'opencode' is installed.`);
 }
 
 // Authentication Middleware
@@ -135,11 +191,12 @@ app.use("/v1", (req, res, next) => {
   next();
 });
 
-// GET /v1/models
-app.get("/v1/models", (req, res) => {
+// GET /v1/models (Updated to be fully dynamic)
+app.get("/v1/models", async (req, res) => {
+  const dynamicModels = await getAvailableModels();
   res.json({
     object: "list",
-    data: MODELS.map((m) => ({
+    data: dynamicModels.map((m) => ({
       id: m.id,
       object: "model",
       created: Math.floor(Date.now() / 1000),
@@ -150,8 +207,12 @@ app.get("/v1/models", (req, res) => {
 
 // POST /v1/chat/completions
 app.post("/v1/chat/completions", async (req, res) => {
-  const { model, messages } = req.body;
-  const selectedModel = model || "opencode/gpt-5-nano";
+  const { model, messages, temperature, max_tokens } = req.body;
+  const dynamicModels = await getAvailableModels();
+  
+  // Verify model exists in our active models list
+  const defaultModel = dynamicModels[0]?.id || "opencode/big-pickle";
+  const selectedModel = model || defaultModel;
   const startTime = Date.now();
 
   console.log(`[Proxy] Request received for model: ${selectedModel} (msgs: ${messages?.length || 0})`);
@@ -203,10 +264,17 @@ app.post("/v1/chat/completions", async (req, res) => {
     }
 
     // 3. Prompt the session
+    // We include temperature and maxTokens in the prompt body just in case the SDK parses them.
     const result = await client.session.prompt({
       baseUrl: BASE,
       path: { id: session.id },
-      body: { parts },
+      body: { 
+        parts,
+        config: {
+          temperature: temperature !== undefined ? Number(temperature) : 0.7,
+          maxTokens: max_tokens !== undefined ? Number(max_tokens) : 2048
+        }
+      },
     });
 
     // 4. Compile the output parts
@@ -259,15 +327,17 @@ app.get("/health", async (req, res) => {
 
 // Start proxy server
 app.listen(PROXY_PORT, "0.0.0.0", async () => {
+  const dynamicModels = await getAvailableModels();
   console.log("");
   console.log("=".repeat(60));
-  console.log(`  🔮 Aetherix Local OpenCode Proxy Gateway`);
+  console.log(`  🔮 Aetherix Local OpenCode Proxy Gateway (Dynamic Version)`);
   console.log("=".repeat(60));
   console.log(`  Local Endpoint:   http://localhost:${PROXY_PORT}/v1`);
   console.log(`  Dashboard UI:     http://localhost:${PROXY_PORT}`);
   console.log(`  Listen Mode:      All interfaces (0.0.0.0)`);
-  console.log(`  Bypass LocalAuth: ${!STRICT_AUTH ? "ENABLED (Localhost calls skip API Key)" : "DISABLED"}`);
+  console.log(`  Bypass LocalAuth: ${!STRICT_AUTH ? "ENABLED" : "DISABLED"}`);
   console.log(`  API Key:          ${API_KEY}`);
+  console.log(`  Detected Models:  ${dynamicModels.map(m => m.id).join(", ")}`);
   console.log("=".repeat(60));
   
   // Ensure the local OpenCode Daemon is spun up
