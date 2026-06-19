@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aetherix AI Local Gateway Dashboard</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Decorative background elements -->
+  <div class="mesh-blob mesh-1"></div>
+  <div class="mesh-blob mesh-2"></div>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="logo-area">
+        <span class="logo-icon">🔮</span>
+        <div class="logo-text">
+          <h1>Aetherix AI</h1>
+          <span class="logo-sub">Local Gateway</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </button>
+        <button class="nav-item" data-tab="playground">
+          <span class="nav-icon">💬</span> Playground
+        </button>
+        <button class="nav-item" data-tab="docs">
+          <span class="nav-icon">💻</span> Integration Guide
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="version-tag">Version 1.0.0 (Local)</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top header bar -->
+      <header class="top-header">
+        <h2 id="page-title">Dashboard Overview</h2>
+        <div class="health-overview">
+          <div class="health-chip" id="proxy-status-chip">
+            <span class="pulse-dot green"></span>
+            Proxy Server: <strong id="proxy-port-txt">4000</strong>
+          </div>
+          <div class="health-chip" id="daemon-status-chip">
+            <span class="pulse-dot red" id="daemon-pulse"></span>
+            OpenCode Daemon: <strong id="daemon-status-txt">Checking...</strong>
+          </div>
+        </div>
+      </header>
+
+      <!-- TAB 1: DASHBOARD -->
+      <section class="tab-content active" id="tab-dashboard">
+        <div class="grid-layout">
+          <!-- Card 1: Server Stats -->
+          <div class="card glass status-card">
+            <h3>System Status</h3>
+            <div class="stat-list">
+              <div class="stat-item">
+                <span class="stat-label">Local Gateway Address</span>
+                <span class="stat-value code-snippet">http://localhost:4000/v1</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">OpenCode Daemon Port</span>
+                <span class="stat-value">3333</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Uptime</span>
+                <span class="stat-value" id="uptime-value">0s</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Default Local API Key</span>
+                <span class="stat-value code-snippet">aetherix-sk-master-9f3a7b2e1d</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Quick Start -->
+          <div class="card glass highlight-card">
+            <h3>Local Instance Hosting</h3>
+            <p>You have successfully run the local OpenCode proxy. Your PC is now acts as an AI engine instance! You can access all local models via standard OpenAI-compatible client calls.</p>
+            
+            <div class="banner">
+              <span class="banner-icon">🌐</span>
+              <div class="banner-content">
+                <h4>Share With Other PCs</h4>
+                <p>Want colleagues or other devices to use your PC's models? Run the sharing script to expose a public URL:</p>
+                <div class="share-box">
+                  <code>npm run share</code>
+                  <button class="copy-btn" onclick="copyText('npm run share')">Copy</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Model List -->
+          <div class="card glass full-width">
+            <h3>Available Proxy Models</h3>
+            <p class="subtitle">These free models are proxied automatically from your local OpenCode environment:</p>
+            
+            <div class="model-cards-grid">
+              <div class="model-item-card">
+                <div class="model-header">
+                  <span class="model-badge vision">Vision</span>
+                  <h4>GPT-5 Nano</h4>
+                </div>
+                <p class="model-desc">Capable vision and text model with large context size.</p>
+                <code class="model-id-code">opencode/gpt-5-nano</code>
+              </div>
+
+              <div class="model-item-card">
+                <div class="model-header">
+                  <span class="model-badge text">Text</span>
+                  <h4>Big Pickle</h4>
+                </div>
+                <p class="model-desc">Highly capable reasoning and problem solving engine.</p>
+                <code class="model-id-code">opencode/big-pickle</code>
+              </div>
+
+              <div class="model-item-card">
+                <div class="model-header">
+                  <span class="model-badge text">Text</span>
+                  <h4>MiniMax M2.5 Free</h4>
+                </div>
+                <p class="model-desc">High-speed general purpose assistant model.</p>
+                <code class="model-id-code">opencode/minimax-m2.5-free</code>
+              </div>
+
+              <div class="model-item-card">
+                <div class="model-header">
+                  <span class="model-badge text">Text</span>
+                  <h4>Nemotron 3 Super Free</h4>
+                </div>
+                <p class="model-desc">Optimized reasoning engine powered by NVIDIA.</p>
+                <code class="model-id-code">opencode/nemotron-3-super-free</code>
+              </div>
+
+              <div class="model-item-card">
+                <div class="model-header">
+                  <span class="model-badge text">Text</span>
+                  <h4>DeepSeek V4 Flash Free</h4>
+                </div>
+                <p class="model-desc">Ultra-fast response generation for code and text.</p>
+                <code class="model-id-code">opencode/deepseek-v4-flash-free</code>
+              </div>
+
+              <div class="model-item-card">
+                <div class="model-header">
+                  <span class="model-badge text">Text</span>
+                  <h4>Qwen 3.6 Plus Free</h4>
+                </div>
+                <p class="model-desc">State-of-the-art multilingual and creative text helper.</p>
+                <code class="model-id-code">opencode/qwen3.6-plus-free</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: PLAYGROUND -->
+      <section class="tab-content" id="tab-playground">
+        <div class="playground-layout">
+          <!-- Left side controls -->
+          <div class="playground-sidebar card glass">
+            <h3>Playground Controls</h3>
+            <div class="form-group">
+              <label for="play-model-select">Active Model</label>
+              <select id="play-model-select" class="form-select">
+                <option value="opencode/gpt-5-nano">GPT-5 Nano (Vision)</option>
+                <option value="opencode/big-pickle">Big Pickle</option>
+                <option value="opencode/minimax-m2.5-free">MiniMax M2.5 Free</option>
+                <option value="opencode/nemotron-3-super-free">Nemotron 3 Super Free</option>
+                <option value="opencode/deepseek-v4-flash-free">DeepSeek V4 Flash Free</option>
+                <option value="opencode/qwen3.6-plus-free">Qwen 3.6 Plus Free</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="play-system-prompt">System Prompt</label>
+              <textarea id="play-system-prompt" class="form-input" rows="4">You are a helpful local assistant powered by Aetherix AI and OpenCode.</textarea>
+            </div>
+
+            <button class="btn btn-secondary" id="clear-chat-btn">Clear Chat History</button>
+          </div>
+
+          <!-- Chat Screen -->
+          <div class="playground-chat-card card glass">
+            <div class="chat-messages" id="chat-messages-container">
+              <div class="message system">
+                <div class="message-content">
+                  Welcome to Aetherix Playground! Select a model on the left, type a prompt below, and chat in real-time.
+                </div>
+              </div>
+            </div>
+
+            <div class="chat-input-area">
+              <textarea id="chat-input-textarea" class="form-input" placeholder="Type a message... (Press Enter to send, Shift+Enter for new line)" rows="2"></textarea>
+              <button class="btn btn-primary" id="send-chat-btn">Send</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: INTEGRATION GUIDE -->
+      <section class="tab-content" id="tab-docs">
+        <div class="docs-layout">
+          <div class="card glass">
+            <h3>Integrate Into Your Editors</h3>
+            <p class="subtitle">Configure your development environment to consume AI directly from your local PC gateway.</p>
+            
+            <div class="tabs-container">
+              <!-- Sub-navigation tabs for code snippets -->
+              <div class="snippets-tabs">
+                <button class="snippet-tab active" data-snippet="continue">VS Code (Continue)</button>
+                <button class="snippet-tab" data-snippet="cursor">Cursor IDE</button>
+                <button class="snippet-tab" data-snippet="python">Python SDK</button>
+                <button class="snippet-tab" data-snippet="node">Node.js (OpenAI)</button>
+              </div>
+
+              <!-- Content items -->
+              <div class="snippet-content active" id="snippet-continue">
+                <p>Open your Continue <code>config.json</code> file (usually at <code>~/.continue/config.json</code>) and add a custom model configuration:</p>
+                <pre><code class="language-json">{
+  "models": [
+    {
+      "title": "Aetherix GPT-5 Nano",
+      "provider": "openai",
+      "model": "opencode/gpt-5-nano",
+      "apiBase": "http://localhost:4000/v1",
+      "apiKey": "aetherix-sk-master-9f3a7b2e1d"
+    },
+    {
+      "title": "Aetherix Big Pickle",
+      "provider": "openai",
+      "model": "opencode/big-pickle",
+      "apiBase": "http://localhost:4000/v1",
+      "apiKey": "aetherix-sk-master-9f3a7b2e1d"
+    }
+  ]
+}</code></pre>
+              </div>
+
+              <div class="snippet-content" id="snippet-cursor">
+                <p>Configure Cursor to redirect completion calls to your local gateway:</p>
+                <ol>
+                  <li>Go to <strong>Cursor Settings &gt; Models</strong>.</li>
+                  <li>Scroll down to <strong>OpenAI API Key</strong>.</li>
+                  <li>Click on **Override OpenAI Base URL**.</li>
+                  <li>Set the URL to: <code>http://localhost:4000/v1</code>.</li>
+                  <li>Enter the Local API key: <code>aetherix-sk-master-9f3a7b2e1d</code>.</li>
+                  <li>Add your desired model IDs, such as <code>opencode/gpt-5-nano</code> and <code>opencode/big-pickle</code>.</li>
+                </ol>
+              </div>
+
+              <div class="snippet-content" id="snippet-python">
+                <p>Send prompts using the standard <code>openai</code> Python package:</p>
+                <pre><code class="language-python">from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:4000/v1",
+    api_key="aetherix-sk-master-9f3a7b2e1d"
+)
+
+response = client.chat.completions.create(
+    model="opencode/big-pickle",
+    messages=[
+        {"role": "user", "content": "Write a python quicksort script."}
+    ]
+)
+
+print(response.choices[0].message.content)</code></pre>
+              </div>
+
+              <div class="snippet-content" id="snippet-node">
+                <p>Query the gateway using the standard JavaScript <code>openai</code> SDK:</p>
+                <pre><code class="language-javascript">import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "http://localhost:4000/v1",
+  apiKey: "aetherix-sk-master-9f3a7b2e1d"
+});
+
+const response = await client.chat.completions.create({
+  model: "opencode/gpt-5-nano",
+  messages: [{ role: "user", content: "Tell me a joke." }]
+});
+
+console.log(response.choices[0].message.content);</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

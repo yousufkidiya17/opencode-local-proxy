@@ -1,0 +1,27 @@
+{
+  "name": "opencode-local-proxy",
+  "version": "1.0.0",
+  "description": "Run an OpenAI-compatible API gateway proxying free OpenCode AI models locally on your PC.",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node server.mjs",
+    "share": "npx localtunnel --port 4000"
+  },
+  "keywords": [
+    "opencode",
+    "proxy",
+    "openai",
+    "ai",
+    "local-server"
+  ],
+  "author": "Aetherix Core",
+  "license": "MIT",
+  "dependencies": {
+    "@opencode-ai/sdk": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}
