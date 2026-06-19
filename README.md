@@ -11,7 +11,7 @@
 
 A portable, ultra-fast **OpenAI-compatible API Gateway** designed to run fully on your local machine. It automatically manages your local OpenCode daemon background process, translates standard chat completion prompts, and exposes a premium glassmorphic playground dashboard.
 
-With this setup, **your local PC acts as a secure, high-speed AI inference instance**—allowing you to call OpenCode's free model catalog (`GPT-5 Nano`, `Big Pickle`, `DeepSeek V4`, `Nemotron`) locally, or share them securely across the internet.
+With this setup, **your local PC acts as a secure, high-speed AI inference instance**—allowing you to call OpenCode's free model catalog dynamically locally, or share them securely across the internet.
 
 ---
 
@@ -33,7 +33,7 @@ With this setup, **your local PC acts as a secure, high-speed AI inference insta
                       └────────────────────┬────────────────────┘
                                            │ (3) Executes on free models
                                            ▼
-                                🤖 [GPT-5/Pickle/DeepSeek]
+                                 🤖 [Dynamic Active Models]
 ```
 
 ---
@@ -44,6 +44,8 @@ With this setup, **your local PC acts as a secure, high-speed AI inference insta
 * **🧠 Zero-Config Daemon Management:** The gateway automatically starts and monitors the local `opencode serve` process on boot. It gracefully shuts down the background daemon when terminated.
 * **🌐 Secure Sharing (Tunneling):** Want to expose your local models to another computer or mobile device? Expose it securely to the world with a single command.
 * **⚡ Intuitively Bypassed Local Auth:** Localhost requests bypass API-key checks automatically to save developer configuration steps.
+* **🔄 100% Dynamic Model Detection:** Models list is never hardcoded! The server queries `opencode models` in real-time and serves available models dynamically. When OpenCode adds or removes a model, it automatically updates without code edits.
+* **🎛️ Generation Parameter Control:** Adjust model **Creativity (Temperature)** and **Max Token Limits** directly from the local dashboard settings before prompting.
 * **🔮 Premium Glassmorphism Dashboard:** Exposes a gorgeous, dark-themed dashboard at root `http://localhost:4000` with real-time status indicators and a **built-in playground chat client**.
 
 ---
@@ -56,7 +58,7 @@ With this setup, **your local PC acts as a secure, high-speed AI inference insta
 > 2. **OpenCode CLI** must be installed:
 >    * *macOS/Linux:* `curl -sSf https://opencode.ai/install.sh | sh`
 >    * *Windows:* Install the CLI executable from the official [OpenCode site](https://opencode.ai).
-> 3. **Login session:** Authenticate your CLI locally before running:
+> 3. **Login session (Optional):** If needed, authenticate your CLI locally before running:
 >    ```bash
 >    opencode login
 >    ```
@@ -121,9 +123,9 @@ Add the following blocks to your `~/.continue/config.json` configuration file:
 {
   "models": [
     {
-      "title": "Local GPT-5 Nano",
+      "title": "Local DeepSeek Free",
       "provider": "openai",
-      "model": "opencode/gpt-5-nano",
+      "model": "opencode/deepseek-v4-flash-free",
       "apiBase": "http://localhost:4000/v1",
       "apiKey": "aetherix-sk-master-9f3a7b2e1d"
     },
@@ -143,7 +145,7 @@ Add the following blocks to your `~/.continue/config.json` configuration file:
 2. Scroll to **OpenAI API Key** and click **Override OpenAI Base URL**.
 3. Set the override base URL to `http://localhost:4000/v1`.
 4. Enter the default key `aetherix-sk-master-9f3a7b2e1d`.
-5. Under model selectors, add your desired targets: `opencode/gpt-5-nano`, `opencode/big-pickle`.
+5. Under model selectors, add your desired targets: `opencode/deepseek-v4-flash-free`, `opencode/big-pickle`.
 
 ---
 
@@ -161,7 +163,9 @@ client = OpenAI(
 
 response = client.chat.completions.create(
     model="opencode/big-pickle",
-    messages=[{"role": "user", "content": "Explain Quicksort algorithm in short."}]
+    messages=[{"role": "user", "content": "Explain Quicksort algorithm in short."}],
+    temperature=0.5,
+    max_tokens=1024
 )
 
 print(response.choices[0].message.content)
@@ -177,8 +181,9 @@ const client = new OpenAI({
 });
 
 const chatCompletion = await client.chat.completions.create({
-  model: "opencode/gpt-5-nano",
-  messages: [{ role: "user", content: "Tell me a space joke." }]
+  model: "opencode/deepseek-v4-flash-free",
+  messages: [{ role: "user", content: "Tell me a space joke." }],
+  temperature=0.8
 });
 
 console.log(chatCompletion.choices[0].message.content);
